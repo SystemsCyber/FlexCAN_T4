@@ -37,7 +37,7 @@
 typedef struct CAN_message_t {
   uint32_t id = 0;          // can identifier
   uint16_t timestamp = 0;   // FlexCAN time when message arrived
-  uint16_t idhit = 0; // filter which passed frame into fifo
+  uint8_t idhit = 0; // filter that id came from
   struct {
     bool extended = 0; // identifier is extended (29-bit)
     bool remote = 0;  // remote transmission request packet type
@@ -54,6 +54,7 @@ typedef struct CAN_message_t {
 typedef struct CANFD_message_t {
   uint32_t id = 0;          // can identifier
   uint16_t timestamp = 0;   // FlexCAN time when message arrived
+  uint8_t idhit = 0; // filter that id came from
   bool brs = 1;        // baud rate switching for data
   bool esi = 0;        // error status indicator
   bool edl = 1;        // extended data length (for RX, 0 == CAN2.0, 1 == FD)
@@ -284,7 +285,7 @@ typedef enum CAN_DEV_TABLE {
 class FlexCAN_T4_Base {
   public:
     virtual void flexcan_interrupt() = 0;
-    virtual void setBaudRate(uint32_t baud = 1000000) = 0;
+    virtual void setBaudRate(uint32_t baud = 1000000, FLEXCAN_RXTX listen_only = TX) = 0;
     virtual uint64_t events() = 0;
     virtual int write(const CANFD_message_t &msg) = 0;
     virtual int write(const CAN_message_t &msg) = 0;
@@ -293,13 +294,13 @@ class FlexCAN_T4_Base {
 };
 
 #if defined(__IMXRT1062__)
-FlexCAN_T4_Base* _CAN1 = nullptr;
-FlexCAN_T4_Base* _CAN2 = nullptr;
-FlexCAN_T4_Base* _CAN3 = nullptr;
+static FlexCAN_T4_Base* _CAN1 = nullptr;
+static FlexCAN_T4_Base* _CAN2 = nullptr;
+static FlexCAN_T4_Base* _CAN3 = nullptr;
 #endif
 #if defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
-FlexCAN_T4_Base* _CAN0 = nullptr;
-FlexCAN_T4_Base* _CAN1 = nullptr;
+static FlexCAN_T4_Base* _CAN0 = nullptr;
+static FlexCAN_T4_Base* _CAN1 = nullptr;
 #endif
 
 extern void ext_outputFD1(const CANFD_message_t &msg); // Interrupt data output, not filtered, for external libraries
@@ -315,8 +316,8 @@ FCTPFD_CLASS class FlexCAN_T4FD : public FlexCAN_T4_Base {
     FlexCAN_T4FD();
     bool isFD() { return 1; }
     void begin();
-    void setTx(FLEXCAN_PINS pin = DEF);
-    void setRx(FLEXCAN_PINS pin = DEF);
+    void setTX(FLEXCAN_PINS pin = DEF);
+    void setRX(FLEXCAN_PINS pin = DEF);
     void enableFIFO(bool status = 1);
     void disableFIFO() { enableFIFO(0); }
     int read(CANFD_message_t &msg);
@@ -372,7 +373,7 @@ FCTPFD_CLASS class FlexCAN_T4FD : public FlexCAN_T4_Base {
     uint8_t max_mailboxes();
     uint64_t readIMASK() { return (((uint64_t)FLEXCANb_IMASK2(_bus) << 32) | FLEXCANb_IMASK1(_bus)); }
     void frame_distribution(CANFD_message_t &msg);
-    void setBaudRate(uint32_t baud = 1000000) { ; } // unused, CAN2.0 only (needed for base class existance)
+    void setBaudRate(uint32_t baud = 1000000, FLEXCAN_RXTX listen_only = TX) { ; } // unused, CAN2.0 only (needed for base class existance)
     void setClock(FLEXCAN_CLOCK clock = CLK_24MHz);
     uint32_t getClock();
     void softReset();
@@ -400,9 +401,9 @@ FCTP_CLASS class FlexCAN_T4 : public FlexCAN_T4_Base {
     bool isFD() { return 0; }
     void begin();
     uint32_t getBaudRate() { return currentBitrate; }
-    void setTx(FLEXCAN_PINS pin = DEF);
-    void setRx(FLEXCAN_PINS pin = DEF);
-    void setBaudRate(uint32_t baud = 1000000);
+    void setTX(FLEXCAN_PINS pin = DEF);
+    void setRX(FLEXCAN_PINS pin = DEF);
+    void setBaudRate(uint32_t baud = 1000000, FLEXCAN_RXTX listen_only = TX);
     void reset() { softReset(); } /* reset flexcan controller (needs register restore capabilities...) */
     void setMaxMB(uint8_t last);
     void enableFIFO(bool status = 1);

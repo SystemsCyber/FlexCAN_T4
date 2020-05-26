@@ -31,7 +31,7 @@
 #include "imxrt_flexcan.h"
 #include "Arduino.h"
 
-void flexcan_isr_can3fd();
+static void flexcan_isr_can3fd();
 
 FCTPFD_FUNC FCTPFD_OPT::FlexCAN_T4FD() {
   if ( _bus == CAN3 ) _CAN3 = this;
@@ -64,7 +64,7 @@ FCTPFD_FUNC void FCTPFD_OPT::begin() {
     busNumber = 3;
   }
 
-  setTx(); setRx();
+  setTX(); setRX();
 
   FLEXCANb_MCR(_bus) &= ~FLEXCAN_MCR_MDIS; /* enable module */
   FLEXCAN_EnterFreezeMode();
@@ -310,7 +310,7 @@ FCTPFD_FUNC void FCTPFD_OPT::softReset() {
   while (FLEXCANb_MCR(_bus) & FLEXCAN_MCR_SOFT_RST);
 }
 
-FCTPFD_FUNC void FCTPFD_OPT::setTx(FLEXCAN_PINS pin) {
+FCTPFD_FUNC void FCTPFD_OPT::setTX(FLEXCAN_PINS pin) {
   if ( _bus == CAN3 ) {
     if ( pin == DEF ) {
       IOMUXC_SW_MUX_CTL_PAD_GPIO_EMC_36 = 0x19; // pin31 T3B2
@@ -331,7 +331,7 @@ FCTPFD_FUNC void FCTPFD_OPT::setTx(FLEXCAN_PINS pin) {
   }
 }
 
-FCTPFD_FUNC void FCTPFD_OPT::setRx(FLEXCAN_PINS pin) {
+FCTPFD_FUNC void FCTPFD_OPT::setRX(FLEXCAN_PINS pin) {
   /* DAISY REGISTER CAN3
     00 GPIO_EMC_37_ALT9 â€” Selecting Pad: GPIO_EMC_37 for Mode: ALT9
     01 GPIO_AD_B0_15_ALT8 â€” Selecting Pad: GPIO_AD_B0_15 for Mode: ALT8
@@ -399,7 +399,7 @@ FCTPFD_FUNC void FCTPFD_OPT::writeIMASKBit(uint8_t mb_num, bool set) {
   else (( set ) ? FLEXCANb_IMASK2(_bus) |= (1UL << (mb_num - 32)) : FLEXCANb_IMASK2(_bus) &= ~(1UL << (mb_num - 32)));
 }
 
-void flexcan_isr_can3fd() {
+static void flexcan_isr_can3fd() {
   if ( _CAN3 ) _CAN3->flexcan_interrupt();
 }
 
